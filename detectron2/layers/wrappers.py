@@ -85,7 +85,8 @@ def empty_input_loss_func_wrapper(loss_func):
 
 
 cross_entropy = empty_input_loss_func_wrapper(F.cross_entropy)
-
+mae = empty_input_loss_func_wrapper(F.l1_loss)
+mse = empty_input_loss_func_wrapper(F.mse_loss)
 
 class _NewEmptyTensorOp(torch.autograd.Function):
     @staticmethod

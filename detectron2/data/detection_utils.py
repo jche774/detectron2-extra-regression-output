@@ -412,6 +412,10 @@ def annotations_to_instances(annos, image_size, mask_format="polygon"):
     classes = torch.tensor(classes, dtype=torch.int64)
     target.gt_classes = classes
 
+    regressions = [int(obj["regression"]) if "regression" in obj else 0 for obj in annos]
+    regressions = torch.tensor(regressions, dtype=torch.float64)
+    target.gt_regressions = regressions
+
     if len(annos) and "segmentation" in annos[0]:
         segms = [obj["segmentation"] for obj in annos]
         if mask_format == "polygon":

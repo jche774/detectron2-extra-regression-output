@@ -181,6 +181,10 @@ Category ids in annotations are not in [1, #categories]! We'll apply a mapping f
                     f"One annotation of image {image_id} contains empty 'bbox' value! "
                     "This json does not have valid COCO format."
                 )
+            
+            regression = anno.get("regression", None)
+            if regression:
+                obj["regression"] = regression
 
             segm = anno.get("segmentation", None)
             if segm:  # either list[list[float]] or dict(RLE)
