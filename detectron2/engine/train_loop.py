@@ -250,6 +250,7 @@ class SimpleTrainer(TrainerBase):
         gather_metric_period=1,
         zero_grad_before_forward=False,
         async_write_metrics=False,
+        loss_weights={}
     ):
         """
         Args:
@@ -281,6 +282,7 @@ class SimpleTrainer(TrainerBase):
         self.gather_metric_period = gather_metric_period
         self.zero_grad_before_forward = zero_grad_before_forward
         self.async_write_metrics = async_write_metrics
+        self.loss_weights = loss_weights
         # create a thread pool that can execute non critical logic in run_step asynchronically
         # use only 1 worker so tasks will be executred in order of submitting.
         self.concurrent_executor = concurrent.futures.ThreadPoolExecutor(max_workers=1)
@@ -312,7 +314,7 @@ class SimpleTrainer(TrainerBase):
             losses = loss_dict
             loss_dict = {"total_loss": loss_dict}
         else:
-            losses = sum(loss_dict.values())
+            losses = sum(v * self.loss_weights.get(k, 1.0) for k, v in loss_dict.items())
         if not self.zero_grad_before_forward:
             """
             If you need to accumulate gradients or do something similar, you can
@@ -367,7 +369,7 @@ class SimpleTrainer(TrainerBase):
         iter = self.iter if iter is None else iter
         if (iter + 1) % self.gather_metric_period == 0:
             try:
-                SimpleTrainer.write_metrics(loss_dict, data_time, iter, prefix)
+                SimpleTrainer.write_metrics(loss_dict, data_time, iter, prefix, self.loss_weights)
             except Exception:
                 logger.exception("Exception in writing metrics: ")
                 raise
@@ -378,6 +380,7 @@ class SimpleTrainer(TrainerBase):
         data_time: float,
         cur_iter: int,
         prefix: str = "",
+        loss_weights={},
     ) -> None:
         """
         Args:
@@ -407,7 +410,7 @@ class SimpleTrainer(TrainerBase):
             metrics_dict = {
                 k: np.mean([x[k] for x in all_metrics_dict]) for k in all_metrics_dict[0].keys()
             }
-            total_losses_reduced = sum(metrics_dict.values())
+            total_losses_reduced = sum(v * loss_weights.get(k, 1.0) for k, v in metrics_dict.items())
             if not np.isfinite(total_losses_reduced):
                 raise FloatingPointError(
                     f"Loss became infinite or NaN at iteration={cur_iter}!\n"
