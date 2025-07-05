@@ -358,6 +358,10 @@ class FastRCNNOutputLayers(nn.Module):
         else:
             loss_cls = cross_entropy(scores, gt_classes, reduction="mean")
         loss_regression = mae(regression_values[:,0], gt_regressions, reduction="mean")
+        print('------------------------------')
+        print(regression_values[:,0])
+        print(gt_regressions)
+        print(loss_regression)
 
         losses = {
             "loss_cls": loss_cls,
